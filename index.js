@@ -6,6 +6,7 @@ let state = {
   data: [],
   salary: null,
   prices: [],
+  selectedprices: [],
   zip: null,
 };
 
@@ -66,11 +67,11 @@ function init() {
       source: "zip-code-tabulation-area-1dfnll",
       "source-layer": "zip-code-tabulation-area-1dfnll",
       paint: {
-        "fill-outline-color": "#484896",
-        "fill-color": "#6e599f",
+        // "fill-outline-color": "#484896",
+        "fill-color": "#f5f5f5",
         "fill-opacity": 0.75,
       },
-      filter: ["in", "ZCTA5CE10", ""],
+      // filter: ["in", "ZCTA5CE10", ""],
     }); // Place polygon under these labels, per MB documentation
   });
 
@@ -85,7 +86,11 @@ function init() {
 }
 
 function draw() {
-  console.log("updated state", state);
+  //ARRAY RESET
+  state.prices = [];
+
+  d3.selectAll(".lines").remove();
+
   state.data.forEach((d) => {
     let p = d.priceIndex * 0.2;
     let yp = (d.priceIndex - p) / 30;
@@ -94,8 +99,8 @@ function draw() {
       return state.prices.push(d);
     }
   });
-  console.log(state.prices);
-  console.log(state.salary);
+  console.log("prices: ", state.prices);
+  console.log("salary: ", state.salary);
   // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
   let prices09 = state.prices.filter((d) => d.year == 2009);
   let prices19 = state.prices.filter((d) => d.year == 2019);
@@ -106,50 +111,65 @@ function draw() {
   //SWITCH
   //attach the switch to values here
 
+  const switcher = d3.select("#customSwitch1").on("change", (e) => {
+    if (d3.select("#customSwitch1").property("checked") == true) {
+      console.log("I'm on!");
+      state.selectedprices = prices19;
+    } else {
+      console.log("I'm off!");
+      state.selectedprices = prices09;
+    }
+  });
+
   // COLOR
   const color = d3
     .scaleSequential()
     .domain(d3.extent(prices19, (d) => d.priceIndex))
     .range(["#6ea5c6", "#494197"]);
 
+  // in short, i'm turning the returned filtered prices into bins
+  // then applying color in the way that mapbox will accept it
+
+  const price = Array.from(
+    new Set(state.selectedprices.map((d) => d.priceIndex))
+  );
+  console.log(price);
+
+  const intersperse = state.selectedprices.reduce((acc, property) => {
+    const zipCode = `${property.zip}`;
+    acc[zipCode] = color(property.priceIndex);
+    return acc;
+  }, {});
+  const ia = Object.entries(intersperse);
+  const step = ia.map((d) => [d[0], d[1]]);
+  let flattening = step.flat();
+  flattening.unshift("match", ["get", "ZCTA5CE10"]);
+  flattening.push("rgba(0,0,0,0)");
+  console.log(flattening);
+
+  // console.log("flattened array: ", flattening);
+
+  console.log("selected prices: ", state.selectedprices);
   //  MAP -- REDRAWN WITH COLOR LAYERS
 
-  this.zipmap.on("click", (d) => {
-    console.log("Hello");
+  zipmap.addLayer({
+    id: "selected-prices",
+    source: "zip-code-tabulation-area-1dfnll",
+    "source-layer": "zip-code-tabulation-area-1dfnll",
+    type: "fill",
+    // filter: ["==", state.prices.zip, true],
+    paint: {
+      "fill-color": flattening,
+      "fill-opacity": 0.7,
+    },
   });
-
-  //should filter using the filtered array--only highlight areas that show up in the prices09 or prices19
-
-  // zipmap.on("mouseleave", "zips-highlighted", function () {
-  //   zipmap.getCanvas().style.cursor = "";
-  //   popup.remove();
-  //   map.setFilter("counties-highlighted", ["in", "ZCTA5CE10", ""]);
-  //   overlay.style.display = "none";
-  // });
-
-  //current:
-
-  // const ziplayer = this.zipmap.addLayer({
-  //   id:'',
-  //   source:'',
-  //   'source-layer':'',
-  //   paint:{
-
-  //   }
-  // })
-
-  // ziplayer["paint"] = {
-  //   "fill-color": { property: "ZCTA5CE10", stops: [[], []] },
-  // };
 
   //LINE CHART STARTS HERE--CURRENTLY FUNCTIONAL!
 
   const filtered = state.data.filter((d) => d.zip == state.zip);
   console.log(filtered);
 
-  function average(array) {
-    return array.reduce((a, b) => a + b) / array.length;
-  }
+  const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
   const formatMoney = (num) => d3.format("($,.2f")(num);
 
@@ -194,6 +214,7 @@ function draw() {
   let svg = d3
     .select("#linechart")
     .append("svg")
+    .attr("class", "lines")
     .attr("width", width)
     .attr("height", height);
 
@@ -239,4 +260,8 @@ function draw() {
     .attr("stroke-linejoin", "round")
     .attr("stroke-linecap", "round")
     .attr("d", line);
+
+  // STATE CHECK-IN
+  console.log("updated state", state);
+  state.selectedprices = [];
 }
