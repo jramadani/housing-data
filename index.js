@@ -8,6 +8,7 @@ let state = {
   prices: [],
   selectedprices: [],
   zip: null,
+  legCode: [],
 };
 
 d3.csv(
@@ -26,6 +27,10 @@ d3.csv(
 });
 
 function init() {
+  // if (state.salary == null){
+
+  // }
+
   // form building
   // remember to sanitize the input when you get the rest of this working
 
@@ -60,19 +65,6 @@ function init() {
         "fill-color": "rgba(0,0,0,0.1)",
       },
     });
-
-    zipmap.addLayer({
-      id: "zips-highlighted",
-      type: "fill",
-      source: "zip-code-tabulation-area-1dfnll",
-      "source-layer": "zip-code-tabulation-area-1dfnll",
-      paint: {
-        // "fill-outline-color": "#484896",
-        "fill-color": "#f5f5f5",
-        "fill-opacity": 0.75,
-      },
-      // filter: ["in", "ZCTA5CE10", ""],
-    }); // Place polygon under these labels, per MB documentation
   });
 
   this.zipmap.on("click", "zips", (e) => {
@@ -81,15 +73,22 @@ function init() {
     zipmap.getCanvas().style.cursor = "pointer";
     const feature = e.features[0];
     state.zip = feature.properties.ZCTA5CE10;
+    draw();
   });
-  //end mapbox
+
+  //end mapbox core construction
 }
 
 function draw() {
-  //ARRAY RESET
+  //RESETS -- WHEN USER INTERACTS W/O REFRESHING, THESE CLEAR EXISTING DECLARATIONS
   state.prices = [];
 
   d3.selectAll(".lines").remove();
+  d3.select(".legend svg").remove();
+
+  if (zipmap.getLayer("selected-prices")) {
+    zipmap.removeLayer("selected-prices");
+  }
 
   state.data.forEach((d) => {
     let p = d.priceIndex * 0.2;
@@ -104,12 +103,8 @@ function draw() {
   // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
   let prices09 = state.prices.filter((d) => d.year == 2009);
   let prices19 = state.prices.filter((d) => d.year == 2019);
-  //note to self: the below DOES NOT RESET when you enter a new salary
-  //clear the array when they re-enter a value.
-  console.log(prices19);
 
   //SWITCH
-  //attach the switch to values here
 
   const switcher = d3.select("#customSwitch1").on("change", (e) => {
     if (d3.select("#customSwitch1").property("checked") == true) {
@@ -121,14 +116,13 @@ function draw() {
     }
   });
 
-  // COLOR
+  // COLOR BASE
   const color = d3
     .scaleSequential()
     .domain(d3.extent(prices19, (d) => d.priceIndex))
     .range(["#6ea5c6", "#494197"]);
 
-  // in short, i'm turning the returned filtered prices into bins
-  // then applying color in the way that mapbox will accept it
+  // CONSTRUCTING THE ZIPS/COLOR ARRAY FOR COLORING THE MAP
 
   const price = Array.from(
     new Set(state.selectedprices.map((d) => d.priceIndex))
@@ -145,11 +139,7 @@ function draw() {
   let flattening = step.flat();
   flattening.unshift("match", ["get", "ZCTA5CE10"]);
   flattening.push("rgba(0,0,0,0)");
-  console.log(flattening);
 
-  // console.log("flattened array: ", flattening);
-
-  console.log("selected prices: ", state.selectedprices);
   //  MAP -- REDRAWN WITH COLOR LAYERS
 
   zipmap.addLayer({
@@ -157,12 +147,107 @@ function draw() {
     source: "zip-code-tabulation-area-1dfnll",
     "source-layer": "zip-code-tabulation-area-1dfnll",
     type: "fill",
-    // filter: ["==", state.prices.zip, true],
     paint: {
       "fill-color": flattening,
       "fill-opacity": 0.7,
     },
   });
+
+  state.legCode = d3
+    .extent(state.selectedprices, (d) => d.priceIndex)
+    .map((d) => Math.floor(d));
+
+  // legend construction
+  {
+    function legendConstruction(color, n = 256) {
+      const canv = document.createElement("canvas");
+      canv.width = n;
+      canv.height = 1;
+      const canvas = canv.getContext("2d");
+      for (let i = 0; i < n; ++i) {
+        canvas.fillStyle = color(i / (n - 1));
+        canvas.fillRect(i, 0, 1, 1);
+      }
+      return canv;
+    }
+
+    let legendColor,
+      title,
+      tickSize = 6,
+      width = 320,
+      height = 50 + tickSize,
+      marginTop = 18,
+      marginRight = 0,
+      marginBottom = 16 + tickSize,
+      marginLeft = 0,
+      ticks = width / 64,
+      tickFormat,
+      tickValues;
+
+    legendColor = d3.scaleSequential(state.legCode, ["#6ea5c6", "#494197"]);
+
+    title = "Zip Code Price Index (USD)";
+
+    const legendSvg = d3
+      .selectAll(".legend")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", [0, 0, width, height])
+      .style("overflow", "visible")
+      .style("display", "block");
+
+    let tickAdjust = (g) =>
+      g.selectAll(".tick line").attr("y1", marginTop + marginBottom - height);
+    let x;
+
+    x = Object.assign(
+      legendColor
+        .copy()
+        .interpolator(d3.interpolateRound(marginLeft, width - marginRight)),
+      {
+        range() {
+          return [marginLeft, width - marginRight];
+        },
+      }
+    );
+
+    legendSvg
+      .append("image")
+      .attr("x", marginLeft)
+      .attr("y", marginTop)
+      .attr("width", width - marginLeft - marginRight)
+      .attr("height", height - marginTop - marginBottom)
+      .attr("preserveAspectRatio", "none")
+      .attr(
+        "xlink:href",
+        legendConstruction(legendColor.interpolator()).toDataURL()
+      );
+
+    legendSvg
+      .append("g")
+      .attr("transform", `translate(0,${height - marginBottom})`)
+      .call(
+        d3
+          .axisBottom(x)
+          .ticks(ticks, typeof tickFormat === "string" ? tickFormat : undefined)
+          .tickFormat(typeof tickFormat === "function" ? tickFormat : undefined)
+          .tickSize(tickSize)
+          .tickValues(tickValues)
+      )
+      .call(tickAdjust)
+      .call((g) => g.select(".domain").remove())
+      .call((g) =>
+        g
+          .append("text")
+          .attr("x", marginLeft)
+          .attr("y", marginTop + marginBottom - height - 6)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold")
+          .text(title)
+      );
+  }
 
   //LINE CHART STARTS HERE--CURRENTLY FUNCTIONAL!
 
@@ -179,7 +264,7 @@ function draw() {
     .selectAll(".stats")
     .data([filtered])
     .join("div", (d) => {
-      if (state.salary) {
+      if (state.zip) {
         summstats.html(`
         <span><b>Summary for <span style="color:#6ea5c6">${
           filtered.map((d) => d.zip)[0]
@@ -259,7 +344,8 @@ function draw() {
     .attr("stroke-width", 1.5)
     .attr("stroke-linejoin", "round")
     .attr("stroke-linecap", "round")
-    .attr("d", line);
+    .attr("d", line)
+    .attr("background-color", "#f5f4f4");
 
   // STATE CHECK-IN
   console.log("updated state", state);

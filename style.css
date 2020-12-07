@@ -7,20 +7,100 @@ body {
 }
 
 h2 {
-  font-size: calc(1rem + 2vw);
-  line-height: calc(1.4rem + 2.4vw);
-  font-family: serif;
+  margin: 0;
+  padding: 0;
+  font-size: 3em;
+  font-family: "Unna", serif;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  width: 250px;
+}
+
+.legendwrapper {
+  top: 0;
+  right: 0;
+  padding: 10px;
+  position: absolute;
+  background-color: white;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 2px;
+  margin: 2px;
+}
+
+.legend {
+  padding: 5px 15px;
+}
+
+#apptitle {
+  font-size: calc(0.5rem + 1.85vh);
+  line-height: calc(1.4rem + 1.4vh);
+  align-items: center center;
+  font-family: "Unna", serif;
+  font-size: 2em;
+}
+
+#iconic {
+  font-size: calc(0.5rem + 1.85vw);
+}
+
+.bi {
+  align-items: center center;
 }
 
 .bi:hover {
   color: #6ea5c6;
 }
 
-a #accessible {
-  text-decoration: underline;
+.dropdown {
+  padding-top: 0.09em;
+  outline: 0;
 }
 
-@media screen and (min-width: 900px) {
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 2px;
+  margin: 0;
+}
+
+.dropdown-content li {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+
+.dropdown:focus .dropdown-content {
+  display: block;
+}
+
+#droplinks {
+  text-decoration: none;
+  color: lightblue;
+  font-size: 18px;
+  padding: 20px;
+}
+
+.dropdown-content li:hover {
+  background-color: #1d1e22;
+  border-radius: 2px;
+}
+
+#bootstrap-override {
+  font-family: Helvetica, sans-serif;
+}
+
+@media screen and (min-aspect-ratio: 4/5) {
   #app {
     display: grid;
     align-items: start;
@@ -32,7 +112,6 @@ a #accessible {
   }
 
   .container-left {
-    background-color: bisque;
     width: auto;
     height: 100%;
   }
@@ -40,10 +119,14 @@ a #accessible {
   .header {
     background-color: black;
     color: white;
-    width: auto;
-    height: 10vh;
-    padding: 5px;
+    height: 14vh;
     display: grid;
+    align-items: start;
+    grid-template-columns: 75% 5% 5%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 1fr);
+    width: 100%;
+    padding: 1em;
   }
 
   .header h2 {
@@ -55,9 +138,8 @@ a #accessible {
   }
 
   .infopanel {
-    background-color: beige;
     width: auto;
-    height: 90vh;
+    height: 86vh;
   }
 
   .form-control {
@@ -70,10 +152,10 @@ a #accessible {
     grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
     grid-auto-flow: column;
     grid-auto-columns: minmax(260px, 1fr);
+    height: 43vh;
   }
 
   .inputs {
-    /* background-color: coral; */
     padding: 20px;
   }
 
@@ -82,12 +164,13 @@ a #accessible {
   }
 
   #summary {
-    /* background-color: cornflowerblue; */
-    padding: 20px;
+    padding: 4em;
     display: grid;
-    align-items: center;
+    align-items: center center;
     grid-template-columns: 35% 65%;
     grid-template-rows: auto;
+    height: 43vh;
+    background-color: #f5f4f4;
   }
 
   #stats {
@@ -107,7 +190,7 @@ a #accessible {
 
 /* mobile media query */
 
-@media screen and (max-width: 900px) {
+@media screen and (max-aspect-ratio: 4/5) {
   #app {
     display: grid;
     align-items: start;
@@ -121,7 +204,6 @@ a #accessible {
   .container-left {
     width: auto;
     height: 50vh;
-    /* background-color: cornflowerblue; */
     grid-row-start: 1;
   }
 
@@ -132,11 +214,16 @@ a #accessible {
     height: 10vh;
     padding: 5px;
     display: grid;
+    align-items: start;
+    grid-template-columns: 35% 2% 2%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 1fr);
+    width: 100%;
+    padding: 1em;
   }
 
   .header h2 {
     padding: 30px 5px 10px 5px;
-    /* justify-self: center; */
   }
 
   .description {
@@ -145,7 +232,6 @@ a #accessible {
   }
 
   .infopanel {
-    background-color: beige;
     width: auto;
     height: 90vh;
   }
@@ -159,7 +245,6 @@ a #accessible {
   }
 
   .inputs {
-    /* background-color: coral; */
     padding: 20px;
   }
 
@@ -168,7 +253,6 @@ a #accessible {
   }
 
   #summary {
-    /* background-color: cornflowerblue; */
     padding: 20px;
   }
 
