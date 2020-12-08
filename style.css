@@ -7,48 +7,28 @@ body {
 }
 
 h2 {
-  margin: 0;
-  padding: 0;
   font-size: 3em;
   font-family: "Unna", serif;
 }
 
 ul {
-  margin: 0;
-  padding: 0;
+  padding: 0px;
   list-style: none;
+  margin: 0rem;
 }
 
 li {
   width: 250px;
-}
-
-.legendwrapper {
-  top: 0;
-  right: 0;
-  padding: 10px;
-  position: absolute;
-  background-color: white;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-  border-radius: 2px;
-  margin: 2px;
-}
-
-.legend {
-  padding: 5px 15px;
+  margin: 0px;
+  padding: 0px;
 }
 
 #apptitle {
-  font-size: calc(0.5rem + 1.85vh);
-  line-height: calc(1.4rem + 1.4vh);
+  margin: 0;
+  padding-top: 10px;
   align-items: center center;
   font-family: "Unna", serif;
   font-size: 2em;
-}
-
-#iconic {
-  font-size: calc(0.5rem + 1.85vw);
 }
 
 .bi {
@@ -72,6 +52,7 @@ li {
   z-index: 1;
   border-radius: 2px;
   margin: 0;
+  padding: 0;
 }
 
 .dropdown-content li {
@@ -84,20 +65,33 @@ li {
   display: block;
 }
 
-#droplinks {
+.droplinks {
   text-decoration: none;
-  color: lightblue;
   font-size: 18px;
+  color: #494197;
   padding: 20px;
 }
 
 .dropdown-content li:hover {
   background-color: #1d1e22;
+  color: lightblue;
   border-radius: 2px;
+}
+.droplinks:hover {
+  text-decoration: none;
+  color: lightblue;
 }
 
 #bootstrap-override {
   font-family: Helvetica, sans-serif;
+}
+
+#bootstrap-override a svg {
+  color: white;
+}
+
+#bootstrap-override a .bi:hover {
+  color: #6ea5c6;
 }
 
 @media screen and (min-aspect-ratio: 4/5) {
@@ -122,7 +116,7 @@ li {
     height: 14vh;
     display: grid;
     align-items: start;
-    grid-template-columns: 75% 5% 5%;
+    grid-template-columns: 90% 5% 5%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(260px, 1fr);
     width: 100%;
@@ -133,8 +127,22 @@ li {
     padding: 30px 5px 10px 5px;
   }
 
+  #encapsulatingcontainer {
+    display: grid;
+    align-items: start;
+    grid-template-columns: 70% 5% 5%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 1fr);
+    justify-content: center center;
+  }
+
+  #iconic {
+    font-size: calc(0.5rem + 1.85vw);
+    padding-top: 10px;
+  }
+
   .description {
-    padding: 15px;
+    padding: 50px 50px;
   }
 
   .infopanel {
@@ -149,7 +157,7 @@ li {
   .top {
     display: grid;
     align-items: center;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    grid-template-columns: 60% 40%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(260px, 1fr);
     height: 43vh;
@@ -179,6 +187,22 @@ li {
 
   #linechart {
     grid-column-start: 2;
+  }
+
+  .legendwrapper {
+    top: 0;
+    right: 0;
+    padding: 10px;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    border-radius: 2px;
+    margin: 2px;
+  }
+
+  .legend {
+    padding: 5px 15px;
   }
 
   #map {
@@ -215,33 +239,51 @@ li {
     padding: 5px;
     display: grid;
     align-items: start;
-    grid-template-columns: 35% 2% 2%;
+    grid-template-columns: 98% 1% 1%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(260px, 1fr);
     width: 100%;
     padding: 1em;
+    font-size: 1.65em;
   }
 
   .header h2 {
     padding: 30px 5px 10px 5px;
   }
 
+  #encapsulatingcontainer {
+    display: grid;
+    align-items: start;
+    grid-template-columns: 80% 10% 10%;
+    grid-auto-flow: column;
+    grid-auto-columns: 80% 10% 10%;
+    justify-content: center center;
+    padding: 7px 10px 15px 10px;
+  }
+
+  #iconic {
+    font-size: 2em;
+    padding-top: 10px;
+  }
+
   .description {
-    padding: 15px;
+    padding: 50px;
     width: auto;
   }
 
   .infopanel {
     width: auto;
-    height: 90vh;
+    height: 40vh;
+    font-size: 1.5em;
   }
 
   .top {
     display: grid;
     align-items: center;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    grid-template-columns: 65% 35%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(260px, 1fr);
+    height: 15vh;
   }
 
   .inputs {
@@ -254,6 +296,34 @@ li {
 
   #summary {
     padding: 20px;
+    display: grid;
+    align-items: center center;
+    grid-template-columns: 50% 50%;
+    grid-template-rows: auto;
+    height: 25vh;
+    background-color: #f5f4f4;
+  }
+
+  #stats {
+    margin: 10px;
+    padding: 5px;
+    font-size: -0.25em;
+  }
+
+  .legendwrapper {
+    bottom: 0;
+    left: 0;
+    padding: 10px;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    border-radius: 2px;
+    margin: 2px;
+  }
+
+  .legend {
+    padding: 5px 15px;
   }
 
   #map {

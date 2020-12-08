@@ -1,5 +1,15 @@
-let width = window.innerWidth * 0.3;
-let height = window.innerHeight * 0.3;
+let width, height;
+if (window.innerWidth < 1000) {
+  width = window.innerWidth * 0.5;
+} else {
+  width = window.innerWidth * 0.3;
+}
+if (window.innerHeight > 1000) {
+  height = window.innerHeight * 0.2;
+} else {
+  height = window.innerHeight * 0.3;
+}
+
 let margin = { top: 20, bottom: 50, left: 120, right: 70 };
 
 let state = {
@@ -68,20 +78,37 @@ function init() {
   });
 
   this.zipmap.on("click", "zips", (e) => {
-    console.log("Hello");
-    console.log(e);
     zipmap.getCanvas().style.cursor = "pointer";
+    console.log(e);
     const feature = e.features[0];
     state.zip = feature.properties.ZCTA5CE10;
+    console.log(feature.properties.ZCTA5CE10);
+    new mapboxgl.Popup()
+      .setLngLat(e.lngLat)
+      .setHTML(feature.properties.ZCTA5CE10)
+      .addTo(zipmap);
     draw();
   });
 
   //end mapbox core construction
+
+  // state.selectedprices = state.data.filter((d) => d.year == 2009);
+
+  // let switcher = d3.select("#customSwitch1").on("change", (e) => {
+  //   if (d3.select("#customSwitch1").property("checked") == true) {
+  //     state.selectedprices = [];
+  //     state.selectedprices = state.data.filter((d) => d.year == 2019);
+  //   } else {
+  //     state.selectedprices = [];
+  //     state.selectedprices = state.data.filter((d) => d.year == 2009);
+  //   }
+  // });
 }
 
 function draw() {
   //RESETS -- WHEN USER INTERACTS W/O REFRESHING, THESE CLEAR EXISTING DECLARATIONS
   state.prices = [];
+  // state.selectedprices = [];
 
   d3.selectAll(".lines").remove();
   d3.select(".legend svg").remove();
@@ -98,20 +125,17 @@ function draw() {
       return state.prices.push(d);
     }
   });
-  console.log("prices: ", state.prices);
-  console.log("salary: ", state.salary);
+
   // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
   let prices09 = state.prices.filter((d) => d.year == 2009);
   let prices19 = state.prices.filter((d) => d.year == 2019);
 
   //SWITCH
 
-  const switcher = d3.select("#customSwitch1").on("change", (e) => {
+  switcher = d3.select("#customSwitch1").on("change", (e) => {
     if (d3.select("#customSwitch1").property("checked") == true) {
-      console.log("I'm on!");
       state.selectedprices = prices19;
     } else {
-      console.log("I'm off!");
       state.selectedprices = prices09;
     }
   });
@@ -127,7 +151,6 @@ function draw() {
   const price = Array.from(
     new Set(state.selectedprices.map((d) => d.priceIndex))
   );
-  console.log(price);
 
   const intersperse = state.selectedprices.reduce((acc, property) => {
     const zipCode = `${property.zip}`;
@@ -141,17 +164,18 @@ function draw() {
   flattening.push("rgba(0,0,0,0)");
 
   //  MAP -- REDRAWN WITH COLOR LAYERS
-
-  zipmap.addLayer({
-    id: "selected-prices",
-    source: "zip-code-tabulation-area-1dfnll",
-    "source-layer": "zip-code-tabulation-area-1dfnll",
-    type: "fill",
-    paint: {
-      "fill-color": flattening,
-      "fill-opacity": 0.7,
-    },
-  });
+  if (flattening.length > 3) {
+    zipmap.addLayer({
+      id: "selected-prices",
+      source: "zip-code-tabulation-area-1dfnll",
+      "source-layer": "zip-code-tabulation-area-1dfnll",
+      type: "fill",
+      paint: {
+        "fill-color": flattening,
+        "fill-opacity": 0.7,
+      },
+    });
+  }
 
   state.legCode = d3
     .extent(state.selectedprices, (d) => d.priceIndex)
@@ -186,7 +210,7 @@ function draw() {
 
     legendColor = d3.scaleSequential(state.legCode, ["#6ea5c6", "#494197"]);
 
-    title = "Zip Code Price Index (USD)";
+    title = "Zip Code Single-Family House Price Index (USD)";
 
     const legendSvg = d3
       .selectAll(".legend")
@@ -252,7 +276,6 @@ function draw() {
   //LINE CHART STARTS HERE--CURRENTLY FUNCTIONAL!
 
   const filtered = state.data.filter((d) => d.zip == state.zip);
-  console.log(filtered);
 
   const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
@@ -311,11 +334,16 @@ function draw() {
     .attr("class", "axis x-axis")
     .attr("transform", `translate(0, ${height - margin.bottom})`)
     .call(xAxis)
-    .append("text")
+    .selectAll("text")
+    .style("text-anchor", "start")
+    .attr("dx", "-3em")
+    .attr("dy", ".5em")
     .attr("transform", "rotate(-55)")
+    .append("text")
     .attr("class", "axis-label")
     .attr("x", "50%")
     .attr("dy", "3em")
+    .attr("fill", "black")
     .text("Year");
 
   svg
@@ -326,8 +354,9 @@ function draw() {
     .append("text")
     .attr("class", "axis-label")
     .attr("y", "50%")
-    .attr("dx", "-3em")
+    .attr("dx", "-8em")
     .attr("writing-mode", "vertical-rl")
+    .attr("fill", "black")
     .text("Price Index");
 
   const line = d3
