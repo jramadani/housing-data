@@ -37,7 +37,8 @@
 
             <div class="infopanel">
               <div class="top">
-              <div class="description"><p> [PLACEHOLDER]
+              <div class="description"><p> What would it take to be able to afford a home today, and where are these affordable homes? Click the map, toggle the switch, and enter a salary to find out.
+              <br> <br> Please note that if the line graph does not populate, the data for that zip code does not exist.
               
               </p></div>
               <div class="inputs">
@@ -55,8 +56,18 @@
               </div>
           </div>
         </div>
-        <div id="map"></div>
+        <div id="map">
+
+          <!-- <div class="map-overlay">
+            <div class="map-overlay-inner">
+            <span>Year: <label id="year">2009</label></span>
+            <input id="slider" type="range" min="2009" max="2019" step="1" value="2009" />
+            </div>
+            </div> -->
+
+        </div>
         <div class="legendwrapper"><div class="legend"></div></div>
+
     </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://d3js.org/d3-array.v2.min.js"></script>

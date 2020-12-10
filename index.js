@@ -37,16 +37,33 @@ d3.csv(
 });
 
 function init() {
-  // if (state.salary == null){
+  state.selectedprices = state.data.filter((d) => d.year == 2009);
 
-  // }
+  let switcher = d3.select("#customSwitch1").on("change", (e) => {
+    if (d3.select("#customSwitch1").property("checked") == true) {
+      state.selectedprices = [];
+      state.selectedprices = state.data.filter((d) => d.year == 2019);
+      draw();
+    } else {
+      state.selectedprices = [];
+      state.selectedprices = state.data.filter((d) => d.year == 2009);
+      draw();
+    }
+  });
 
   // form building
   // remember to sanitize the input when you get the rest of this working
 
-  const enter = d3.select("#salgo").on("click", function () {
+  const click = d3.select("#salgo").on("click", function (e) {
     state.salary = document.getElementById("salary").value;
     draw();
+  });
+
+  const enter = d3.select("#salary").on("keydown", function (e) {
+    if (e.code == "Enter") {
+      state.salary = document.getElementById("salary").value;
+      draw();
+    }
   });
 
   // MAPBOX MAP
@@ -79,30 +96,18 @@ function init() {
 
   this.zipmap.on("click", "zips", (e) => {
     zipmap.getCanvas().style.cursor = "pointer";
-    console.log(e);
     const feature = e.features[0];
     state.zip = feature.properties.ZCTA5CE10;
-    console.log(feature.properties.ZCTA5CE10);
     new mapboxgl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(feature.properties.ZCTA5CE10)
+      .setHTML(
+        `<a href="https://www.zillow.com/homes/${feature.properties.ZCTA5CE10}_rb/" target="_blank">${feature.properties.ZCTA5CE10}</a>`
+      )
       .addTo(zipmap);
-    draw();
+    summary();
   });
 
   //end mapbox core construction
-
-  // state.selectedprices = state.data.filter((d) => d.year == 2009);
-
-  // let switcher = d3.select("#customSwitch1").on("change", (e) => {
-  //   if (d3.select("#customSwitch1").property("checked") == true) {
-  //     state.selectedprices = [];
-  //     state.selectedprices = state.data.filter((d) => d.year == 2019);
-  //   } else {
-  //     state.selectedprices = [];
-  //     state.selectedprices = state.data.filter((d) => d.year == 2009);
-  //   }
-  // });
 }
 
 function draw() {
@@ -110,7 +115,6 @@ function draw() {
   state.prices = [];
   // state.selectedprices = [];
 
-  d3.selectAll(".lines").remove();
   d3.select(".legend svg").remove();
 
   if (zipmap.getLayer("selected-prices")) {
@@ -152,6 +156,8 @@ function draw() {
     new Set(state.selectedprices.map((d) => d.priceIndex))
   );
 
+  //turn the below into a function that will pass values through?
+
   const intersperse = state.selectedprices.reduce((acc, property) => {
     const zipCode = `${property.zip}`;
     acc[zipCode] = color(property.priceIndex);
@@ -181,7 +187,7 @@ function draw() {
     .extent(state.selectedprices, (d) => d.priceIndex)
     .map((d) => Math.floor(d));
 
-  // legend construction
+  // legend construction -- base from Mike Bostock on Observable
   {
     function legendConstruction(color, n = 256) {
       const canv = document.createElement("canvas");
@@ -273,39 +279,22 @@ function draw() {
       );
   }
 
-  //LINE CHART STARTS HERE--CURRENTLY FUNCTIONAL!
+  // STATE CHECK-IN
+  console.log("updated state", state);
+  state.selectedprices = [];
+}
 
-  const filtered = state.data.filter((d) => d.zip == state.zip);
+function summary() {
+  d3.selectAll(".lines").remove();
+  //LINE CHART AND SUMMARY
+
+  let filtered = state.data.filter((d) => d.zip == state.zip);
 
   const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
   const formatMoney = (num) => d3.format("($,.2f")(num);
 
   const summstats = d3.select("#stats");
-
-  summstats
-    .selectAll(".stats")
-    .data([filtered])
-    .join("div", (d) => {
-      if (state.zip) {
-        summstats.html(`
-        <span><b>Summary for <span style="color:#6ea5c6">${
-          filtered.map((d) => d.zip)[0]
-        }</span></b></span><br>
-             <span>Average Price Index: ${formatMoney(
-               average(filtered.map((d) => d.priceIndex))
-             )}</span><br>
-             <span>10-Year Low: ${formatMoney(
-               d3.min(filtered.map((d) => d.priceIndex))
-             )}</span><br>
-             <span>10-Year High: ${formatMoney(
-               d3.max(filtered.map((d) => d.priceIndex))
-             )}</span><br>
-             <span>State: ${filtered.map((d) => d.stateName)[0]}</span><br>
-             <span>County: ${filtered.map((d) => d.county)[0]}</span> 
-        `);
-      }
-    });
 
   // LINE CHART CAN GO HERE--IT GETS DRAWN ON CLICK OF THE MAP.
 
@@ -365,6 +354,8 @@ function draw() {
     .x((d) => x(d.year))
     .y((d) => y(d.priceIndex));
 
+  filtered = filtered.filter((d) => d.priceIndex !== 0);
+
   const lcContainer = svg
     .append("path")
     .datum(filtered)
@@ -375,8 +366,30 @@ function draw() {
     .attr("stroke-linecap", "round")
     .attr("d", line)
     .attr("background-color", "#f5f4f4");
+  // .selectAll("d")
+  // .on("mouseover", d=>{d.append("div").html(`${}`)});
 
-  // STATE CHECK-IN
-  console.log("updated state", state);
-  state.selectedprices = [];
+  summstats
+    .selectAll(".stats")
+    .data([filtered])
+    .join("div", (d) => {
+      if (state.zip) {
+        summstats.html(`
+       <span><b>Summary for <span style="color:#6ea5c6">${
+         filtered.map((d) => d.zip)[0]
+       }</span></b></span><br>
+            <span>Average Price Index: ${formatMoney(
+              average(filtered.map((d) => d.priceIndex))
+            )}</span><br>
+            <span>10-Year Low: ${formatMoney(
+              d3.min(filtered.map((d) => d.priceIndex))
+            )}</span><br>
+            <span>10-Year High: ${formatMoney(
+              d3.max(filtered.map((d) => d.priceIndex))
+            )}</span><br>
+            <span>State: ${filtered.map((d) => d.stateName)[0]}</span><br>
+            <span>County: ${filtered.map((d) => d.county)[0]}</span> 
+       `);
+      }
+    });
 }
