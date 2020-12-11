@@ -38,6 +38,7 @@ d3.csv(
 
 function init() {
   state.selectedprices = state.data.filter((d) => d.year == 2009);
+  console.log(state.selectedprices);
 
   let switcher = d3.select("#customSwitch1").on("change", (e) => {
     if (d3.select("#customSwitch1").property("checked") == true) {
@@ -62,6 +63,7 @@ function init() {
   const enter = d3.select("#salary").on("keydown", function (e) {
     if (e.code == "Enter") {
       state.salary = document.getElementById("salary").value;
+      console.log(state.selectedprices);
       draw();
     }
   });
@@ -92,6 +94,7 @@ function init() {
         "fill-color": "rgba(0,0,0,0.1)",
       },
     });
+    mapColor();
   });
 
   this.zipmap.on("click", "zips", (e) => {
@@ -121,7 +124,25 @@ function draw() {
     zipmap.removeLayer("selected-prices");
   }
 
-  state.data.forEach((d) => {
+  state.prices = state.data.filter((d) => d.priceIndex != 0);
+
+  // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
+
+  if (d3.select("#customSwitch1").property("checked") == true) {
+    state.selectedprices = state.prices.filter((d) => d.year == 2019);
+  } else {
+    state.selectedprices = state.prices.filter((d) => d.year == 2009);
+  }
+
+  //SWITCH
+
+  // switcher = d3.select("#customSwitch1").on("change", (e) => {
+
+  // });
+  // console.log(state.selectedprices);
+  state.prices = [];
+
+  state.selectedprices.forEach((d) => {
     let p = d.priceIndex * 0.2;
     let yp = (d.priceIndex - p) / 30;
     let fym = yp + p;
@@ -130,31 +151,34 @@ function draw() {
     }
   });
 
-  // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
-  let prices09 = state.prices.filter((d) => d.year == 2009);
-  let prices19 = state.prices.filter((d) => d.year == 2019);
+  state.selectedprices = [];
+  state.selectedprices = state.prices;
 
-  //SWITCH
+  state.prices = [];
 
-  switcher = d3.select("#customSwitch1").on("change", (e) => {
-    if (d3.select("#customSwitch1").property("checked") == true) {
-      state.selectedprices = prices19;
-    } else {
-      state.selectedprices = prices09;
-    }
-  });
+  // STATE CHECK-IN
+  console.log("updated state", state);
 
+  // state.selectedprices = state.data.filter((d) => d.year == 2009);
+  mapColor();
+}
+
+function mapColor() {
+  if (zipmap.getLayer("selected-prices")) {
+    zipmap.removeLayer("selected-prices");
+  }
+  console.log(state.selectedprices);
   // COLOR BASE
   const color = d3
     .scaleSequential()
-    .domain(d3.extent(prices19, (d) => d.priceIndex))
+    .domain(d3.extent(state.selectedprices, (d) => d.priceIndex))
     .range(["#6ea5c6", "#494197"]);
 
   // CONSTRUCTING THE ZIPS/COLOR ARRAY FOR COLORING THE MAP
 
-  const price = Array.from(
-    new Set(state.selectedprices.map((d) => d.priceIndex))
-  );
+  //  const price = Array.from(
+  //    new Set(state.selectedprices.map((d) => d.priceIndex))
+  //  );
 
   //turn the below into a function that will pass values through?
 
@@ -170,18 +194,17 @@ function draw() {
   flattening.push("rgba(0,0,0,0)");
 
   //  MAP -- REDRAWN WITH COLOR LAYERS
-  if (flattening.length > 3) {
-    zipmap.addLayer({
-      id: "selected-prices",
-      source: "zip-code-tabulation-area-1dfnll",
-      "source-layer": "zip-code-tabulation-area-1dfnll",
-      type: "fill",
-      paint: {
-        "fill-color": flattening,
-        "fill-opacity": 0.7,
-      },
-    });
-  }
+
+  zipmap.addLayer({
+    id: "selected-prices",
+    source: "zip-code-tabulation-area-1dfnll",
+    "source-layer": "zip-code-tabulation-area-1dfnll",
+    type: "fill",
+    paint: {
+      "fill-color": flattening,
+      "fill-opacity": 0.7,
+    },
+  });
 
   state.legCode = d3
     .extent(state.selectedprices, (d) => d.priceIndex)
@@ -278,10 +301,9 @@ function draw() {
           .text(title)
       );
   }
-
+  // state.selectedprices = [];
   // STATE CHECK-IN
   console.log("updated state", state);
-  state.selectedprices = [];
 }
 
 function summary() {
