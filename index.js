@@ -51,6 +51,13 @@ function init() {
     }
   });
 
+  d3.select("#slider").on("input", (e) => {
+    const y = parseInt(e.target.value, 10);
+    d3.select("#year").html(`<span>${y}</span>`);
+    // console.log(y);
+    state.selectedYear = y;
+  });
+
   // form building
   // remember to sanitize the input when you get the rest of this working
 
@@ -108,6 +115,10 @@ function init() {
   });
 
   //end mapbox core construction
+}
+
+function map() {
+  const localColor = d3.zipmap.setPaintProperty("zips");
 }
 
 function draw() {
