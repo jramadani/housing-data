@@ -37,7 +37,9 @@ d3.csv(
 });
 
 function init() {
-  state.selectedprices = state.data.filter((d) => d.year == 2009);
+  state.selectedprices = state.data.filter(
+    (d) => d.year == 2009 && d.priceIndex != 0
+  );
   console.log(state.selectedprices);
 
   let switcher = d3.select("#customSwitch1").on("change", (e) => {
@@ -104,7 +106,7 @@ function init() {
     new mapboxgl.Popup()
       .setLngLat(e.lngLat)
       .setHTML(
-        `<a href="https://www.zillow.com/homes/${feature.properties.ZCTA5CE10}_rb/" target="_blank">${feature.properties.ZCTA5CE10}</a>`
+        `<a style="padding-top:10px;" href="https://www.zillow.com/homes/${feature.properties.ZCTA5CE10}_rb/" target="_blank">${feature.properties.ZCTA5CE10}</a>`
       )
       .addTo(zipmap);
     summary();
@@ -129,17 +131,13 @@ function draw() {
   // REMEMBER TO FILTER FOR THE YEAR BEFORE ATTACHING THE FILTER TO THE MAP.
 
   if (d3.select("#customSwitch1").property("checked") == true) {
+    console.log("checked!");
     state.selectedprices = state.prices.filter((d) => d.year == 2019);
   } else {
+    console.log("unchecked!");
     state.selectedprices = state.prices.filter((d) => d.year == 2009);
   }
 
-  //SWITCH
-
-  // switcher = d3.select("#customSwitch1").on("change", (e) => {
-
-  // });
-  // console.log(state.selectedprices);
   state.prices = [];
 
   state.selectedprices.forEach((d) => {
@@ -151,7 +149,6 @@ function draw() {
     }
   });
 
-  state.selectedprices = [];
   state.selectedprices = state.prices;
 
   state.prices = [];
@@ -159,8 +156,23 @@ function draw() {
   // STATE CHECK-IN
   console.log("updated state", state);
 
+  if (state.salary == null) {
+    if (d3.select("#customSwitch1").property("checked") == true) {
+      console.log("checked!");
+      state.selectedprices = state.data.filter(
+        (d) => d.year == 2019 && d.priceIndex != 0
+      );
+    } else {
+      console.log("unchecked!");
+      state.selectedprices = state.data.filter(
+        (d) => d.year == 2009 && d.priceIndex != 0
+      );
+    }
+  }
+
   // state.selectedprices = state.data.filter((d) => d.year == 2009);
   mapColor();
+  state.selectedprices = [];
 }
 
 function mapColor() {
@@ -311,6 +323,7 @@ function summary() {
   //LINE CHART AND SUMMARY
 
   let filtered = state.data.filter((d) => d.zip == state.zip);
+  filtered = filtered.filter((d) => d.year !== 2020);
 
   const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
@@ -390,6 +403,17 @@ function summary() {
     .attr("background-color", "#f5f4f4");
   // .selectAll("d")
   // .on("mouseover", d=>{d.append("div").html(`${}`)});
+
+  const pathLength = lcContainer.node().getTotalLength();
+  console.log(pathLength);
+
+  lcContainer
+    .attr("stroke-dasharray", pathLength + " " + pathLength)
+    .attr("stroke-dashoffset", pathLength)
+    .transition()
+    .duration(2500)
+    .attr("stroke-dashoffset", 0)
+    .ease();
 
   summstats
     .selectAll(".stats")
