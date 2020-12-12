@@ -19,6 +19,7 @@ let state = {
   selectedprices: [],
   zip: null,
   legCode: [],
+  color: () => {},
 };
 
 d3.csv(
@@ -118,7 +119,6 @@ function init() {
 function draw() {
   //RESETS -- WHEN USER INTERACTS W/O REFRESHING, THESE CLEAR EXISTING DECLARATIONS
   state.prices = [];
-  // state.selectedprices = [];
 
   d3.select(".legend svg").remove();
 
@@ -170,7 +170,6 @@ function draw() {
     }
   }
 
-  // state.selectedprices = state.data.filter((d) => d.year == 2009);
   mapColor();
   state.selectedprices = [];
 }
@@ -181,22 +180,26 @@ function mapColor() {
   }
   console.log(state.selectedprices);
   // COLOR BASE
-  const color = d3
-    .scaleSequential()
-    .domain(d3.extent(state.selectedprices, (d) => d.priceIndex))
-    .range(["#6ea5c6", "#494197"]);
+
+  if (state.salary == null) {
+    state.color = d3
+      .scaleSequential()
+      .domain([d3.min(state.selectedprices, (d) => d.priceIndex), 750000])
+      .range(["#6ea5c6", "#494197"]);
+  } else {
+    state.color = d3
+      .scaleSequential()
+      .domain(d3.extent(state.selectedprices, (d) => d.priceIndex))
+      .range(["#6ea5c6", "#494197"]);
+  }
 
   // CONSTRUCTING THE ZIPS/COLOR ARRAY FOR COLORING THE MAP
 
-  //  const price = Array.from(
-  //    new Set(state.selectedprices.map((d) => d.priceIndex))
-  //  );
-
-  //turn the below into a function that will pass values through?
+  let emptyArray = [];
 
   const intersperse = state.selectedprices.reduce((acc, property) => {
     const zipCode = `${property.zip}`;
-    acc[zipCode] = color(property.priceIndex);
+    acc[zipCode] = state.color(property.priceIndex);
     return acc;
   }, {});
   const ia = Object.entries(intersperse);
@@ -204,6 +207,15 @@ function mapColor() {
   let flattening = step.flat();
   flattening.unshift("match", ["get", "ZCTA5CE10"]);
   flattening.push("rgba(0,0,0,0)");
+
+  flattening.forEach((d) => {
+    if (d == "rgb(0, 0, 0)") {
+      emptyArray.push("rgb(50, 7, 118)");
+    } else {
+      emptyArray.push(d);
+    }
+  });
+  console.log(emptyArray);
 
   //  MAP -- REDRAWN WITH COLOR LAYERS
 
@@ -213,14 +225,21 @@ function mapColor() {
     "source-layer": "zip-code-tabulation-area-1dfnll",
     type: "fill",
     paint: {
-      "fill-color": flattening,
+      "fill-color": emptyArray,
       "fill-opacity": 0.7,
     },
   });
 
-  state.legCode = d3
-    .extent(state.selectedprices, (d) => d.priceIndex)
-    .map((d) => Math.floor(d));
+  if (state.salary == null) {
+    state.legCode = [
+      d3.min(state.selectedprices, (d) => Math.floor(d.priceIndex)),
+      750000,
+    ];
+  } else {
+    state.legCode = d3
+      .extent(state.selectedprices, (d) => d.priceIndex)
+      .map((d) => Math.floor(d));
+  }
 
   // legend construction -- base from Mike Bostock on Observable
   {
@@ -313,7 +332,7 @@ function mapColor() {
           .text(title)
       );
   }
-  // state.selectedprices = [];
+
   // STATE CHECK-IN
   console.log("updated state", state);
 }
@@ -324,6 +343,7 @@ function summary() {
 
   let filtered = state.data.filter((d) => d.zip == state.zip);
   filtered = filtered.filter((d) => d.year !== 2020);
+  let national = state.data.filter((d) => d.year !== 2020 && d.priceIndex != 0);
 
   const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
@@ -331,7 +351,21 @@ function summary() {
 
   const summstats = d3.select("#stats");
 
-  // LINE CHART CAN GO HERE--IT GETS DRAWN ON CLICK OF THE MAP.
+  const baseData = state.data.filter(
+    (d) => d.year != 2020 && d.priceIndex != 0
+  );
+  const stateAverage = formatMoney(
+    average(
+      baseData
+        .filter(
+          (d) => d.stateName == filtered.find((d) => d.stateName).stateName
+        )
+        .map((d) => d.priceIndex)
+    )
+  );
+  const nationalAvg = formatMoney(average(baseData.map((d) => d.priceIndex)));
+
+  // LINE CHART GETS DRAWN ON CLICK OF THE MAP
 
   const x = d3
     .scaleLinear()
@@ -391,6 +425,17 @@ function summary() {
 
   filtered = filtered.filter((d) => d.priceIndex !== 0);
 
+  // const tlContainer = svg
+  //   .append("path")
+  //   .datum(national)
+  //   .attr("fill", "none")
+  //   .attr("stroke", "#a6a6a6")
+  //   .attr("stroke-width", 1.5)
+  //   .attr("stroke-linejoin", "round")
+  //   .attr("stroke-linecap", "round")
+  //   .attr("d", line)
+  //   .attr("background-color", "#f5f4f4");
+
   const lcContainer = svg
     .append("path")
     .datum(filtered)
@@ -401,11 +446,8 @@ function summary() {
     .attr("stroke-linecap", "round")
     .attr("d", line)
     .attr("background-color", "#f5f4f4");
-  // .selectAll("d")
-  // .on("mouseover", d=>{d.append("div").html(`${}`)});
 
   const pathLength = lcContainer.node().getTotalLength();
-  console.log(pathLength);
 
   lcContainer
     .attr("stroke-dasharray", pathLength + " " + pathLength)
@@ -421,20 +463,24 @@ function summary() {
     .join("div", (d) => {
       if (state.zip) {
         summstats.html(`
-       <span><b>Summary for <span style="color:#6ea5c6">${
+       <span style="font-size:1.15em"><u><b>Summary for <span style="color:#6ea5c6">${
          filtered.map((d) => d.zip)[0]
-       }</span></b></span><br>
-            <span>Average Price Index: ${formatMoney(
+       }</span></b></u></span><br>
+            <span><b>Average Price Index:</b> ${formatMoney(
               average(filtered.map((d) => d.priceIndex))
             )}</span><br>
-            <span>10-Year Low: ${formatMoney(
+            <span><b>10-Year Low:</b> ${formatMoney(
               d3.min(filtered.map((d) => d.priceIndex))
             )}</span><br>
-            <span>10-Year High: ${formatMoney(
+            <span><b>10-Year High:</b> ${formatMoney(
               d3.max(filtered.map((d) => d.priceIndex))
             )}</span><br>
-            <span>State: ${filtered.map((d) => d.stateName)[0]}</span><br>
-            <span>County: ${filtered.map((d) => d.county)[0]}</span> 
+            <span><b>State:</b> ${
+              filtered.map((d) => d.stateName)[0]
+            }</span><br>
+            <span><b>County:</b> ${filtered.map((d) => d.county)[0]}</span><br>
+            <span><b>State Average:</b> ${stateAverage}</span> <br>
+            <span><b>National Average:</b> ${nationalAvg}</span>  
        `);
       }
     });
